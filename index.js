@@ -3,6 +3,7 @@ const cors = require("cors");
 const qs = require("qs");
 const axios = require("axios");
 const dotenv = require("dotenv");
+dotenv.config();
 const mongoose = require("mongoose");
 const connectDB = require("./config/config");
 const path = require("path");
@@ -17,10 +18,16 @@ const adminCsoRoutes = require("./routes/adminCsoRoutes");
 const adminSavingsRoutes = require("./routes/adminSavingsRoutes");
 const adminCustomerRoutes = require("./routes/adminCustomerRoutes");
 const adminPanelRoutes = require("./routes/adminPanelRoutes");
+const managerAuthRoutes = require("./routes/managerAuthRoutes");
+const managerDataRoutes = require("./routes/managerDataRoutes");
+const customerAuthRoutes = require("./routes/customerAuthRoutes");
+const customerDataRoutes = require("./routes/customerDataRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const adminReportRoutes = require("./routes/adminReportRoutes");
+const adminAuthRoutes = require("./routes/adminAuthRoutes");
+const { initCronJobs } = require("./utils/cronJobs");
 
 const app = express();
-dotenv.config();
 
 // Database connection
 connectDB();
@@ -41,6 +48,12 @@ app.use("/api/admin/csos", adminCsoRoutes);
 app.use("/api/admin/savings", adminSavingsRoutes);
 app.use("/api/admin/customers", adminCustomerRoutes);
 app.use("/api/admin/panel", adminPanelRoutes);
+app.use("/api/manager-auth", managerAuthRoutes);
+app.use("/api/manager", managerDataRoutes);
+app.use("/api/customer/auth", customerAuthRoutes);
+app.use("/api/customer", customerDataRoutes);
+app.use("/api/admin/reports", adminReportRoutes);
+app.use("/api/admin-auth", adminAuthRoutes);
 app.use(uploadRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -65,6 +78,9 @@ app.get("/", (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// Initialize Cron Jobs
+initCronJobs();
 
 // Server
 const PORT = process.env.PORT || 5000;

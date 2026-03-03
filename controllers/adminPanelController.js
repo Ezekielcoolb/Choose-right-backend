@@ -97,3 +97,17 @@ exports.toggleSuspendMember = async (req, res) => {
     return res.status(status).json({ message, details });
   }
 };
+exports.deleteAdminMember = async (req, res) => {
+  try {
+    const member = await AdminMember.findByIdAndDelete(req.params.id);
+
+    if (!member) {
+      return res.status(404).json({ message: "Admin member not found" });
+    }
+
+    return res.json({ message: "Admin member deleted successfully" });
+  } catch (error) {
+    const { status, message } = formatError(error);
+    return res.status(status).json({ message });
+  }
+};

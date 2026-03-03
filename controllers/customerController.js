@@ -12,8 +12,8 @@ const normalizeSearch = (value) => (value || "").trim();
 
 exports.createCustomer = async (req, res) => {
   try {
-    const { firstName, lastName, phone, address } = req.body;
-    if (!firstName || !lastName || !phone || !address) {
+    const { firstName, lastName, phone, address, email, password } = req.body;
+    if (!firstName || !lastName || !phone || !address || !email || !password) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -25,7 +25,17 @@ exports.createCustomer = async (req, res) => {
     const customer = await Customer.create(payload);
     return res.status(201).json(customer);
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Unable to create customer" });
+    if (error.code === 11000) {
+      if (error.keyPattern.email) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+      if (error.keyPattern.phone) {
+        return res.status(400).json({ message: "Phone number already exists" });
+      }
+    }
+    return res
+      .status(500)
+      .json({ message: error.message || "Unable to create customer" });
   }
 };
 
@@ -60,14 +70,18 @@ exports.getCustomers = async (req, res) => {
         $group: {
           _id: "$customerId",
           totalPlans: { $sum: 1 },
-          activePlans: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+          activePlans: {
+            $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] },
+          },
           totalDeposited: { $sum: "$totalDeposited" },
           availableBalance: { $sum: "$availableBalance" },
         },
       },
     ]);
 
-    const summaryMap = new Map(plansByCustomer.map((item) => [item._id.toString(), item]));
+    const summaryMap = new Map(
+      plansByCustomer.map((item) => [item._id.toString(), item]),
+    );
 
     const enriched = items.map((customer) => {
       const stats = summaryMap.get(customer._id.toString()) || {};
@@ -92,25 +106,34 @@ exports.getCustomers = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Unable to fetch customers" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Unable to fetch customers" });
   }
 };
 
 exports.getCustomerById = async (req, res) => {
   try {
-    const customer = await Customer.findOne({ _id: req.params.id, csoId: req.csoId });
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      csoId: req.csoId,
+    });
     if (!customer) {
       return res.status(404).json({ message: "Customer not found" });
     }
 
-    const plans = await SavingsPlan.find({ customerId: customer._id }).sort({ createdAt: -1 });
+    const plans = await SavingsPlan.find({ customerId: customer._id }).sort({
+      createdAt: -1,
+    });
 
     return res.json({
       customer,
       savingsPlans: plans,
     });
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Unable to fetch customer" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Unable to fetch customer" });
   }
 };
 
@@ -148,7 +171,9 @@ exports.updateCustomer = async (req, res) => {
 
     return res.json(customer);
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Unable to update customer" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Unable to update customer" });
   }
 };
 
@@ -166,6 +191,8 @@ exports.archiveCustomer = async (req, res) => {
 
     return res.json(customer);
   } catch (error) {
-    return res.status(500).json({ message: error.message || "Unable to archive customer" });
+    return res
+      .status(500)
+      .json({ message: error.message || "Unable to archive customer" });
   }
 };

@@ -1,0 +1,20 @@
+# Placeholder .htaccess for deploying the Node.js app on cPanel/Passenger.
+# Update PassengerAppRoot below to the absolute path of your application on the server
+# (for example: /home/USERNAME/nodejs-apps/loanSystem-backend) after uploading.
+
+<IfModule mod_passenger.c>
+  PassengerAppType node
+  PassengerStartupFile index.js
+  PassengerAppRoot "/home/USERNAME/nodejs-apps/loanSystem-backend"
+  PassengerBaseURI "/"
+  PassengerAppEnv production
+</IfModule>
+
+# Ensure clean URLs while allowing static files to be served directly.
+<IfModule mod_rewrite.c>
+  Options -MultiViews
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+</IfModule>

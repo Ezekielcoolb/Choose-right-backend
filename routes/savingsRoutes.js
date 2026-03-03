@@ -7,6 +7,7 @@ const {
   recordDeposit,
   recordWithdrawal,
   updatePlanStatus,
+  updateDailyContribution,
   getPlanEntries,
   requestLoan,
   approveLoan,
@@ -25,6 +26,8 @@ router.route("/").get(getPlans).post(createPlan);
 router.post("/customer/:id", createPlanForCustomer);
 
 router.route("/:id").get(getPlanById).patch(updatePlanStatus);
+
+router.patch("/:id/contribution", updateDailyContribution);
 
 router.post("/:id/deposits", recordDeposit);
 router.post("/:id/withdrawals", recordWithdrawal);

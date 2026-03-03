@@ -44,6 +44,7 @@ const loanDetailsSchema = new mongoose.Schema(
     },
     customerSignature: { type: String },
     maintenanceFeePaid: { type: Boolean, default: false },
+    overdueFeeCharged: { type: Boolean, default: false },
   },
   { _id: false, id: false },
 );

@@ -27,6 +27,7 @@ const csoSchema = new mongoose.Schema(
         amountPaid: { type: String, default: "0" },
         // image: { type: String },
         amountRemitted: { type: Number, default: 0 },
+        resolution: { type: Number, default: 0 },
         issueResolution: { type: String, default: "" },
         remark: { type: String },
         resolvedIssue: { type: String, default: "" },

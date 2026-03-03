@@ -7,7 +7,11 @@ const formatNumber = (value) => {
   if (typeof value === "number") {
     return value;
   }
-  if (value && typeof value === "object" && typeof value.valueOf === "function") {
+  if (
+    value &&
+    typeof value === "object" &&
+    typeof value.valueOf === "function"
+  ) {
     const converted = Number(value.valueOf());
     return Number.isNaN(converted) ? 0 : converted;
   }
@@ -24,10 +28,14 @@ exports.getCsoDetail = async (req, res) => {
       return res.status(404).json({ message: "CSO not found" });
     }
 
-    const customers = await Customer.find({ csoId: id }).sort({ createdAt: -1 }).lean();
+    const customers = await Customer.find({ csoId: id })
+      .sort({ createdAt: -1 })
+      .lean();
     const customerIds = customers.map((customer) => customer._id);
 
-    const plans = await SavingsPlan.find({ csoId: id }).sort({ createdAt: -1 }).lean();
+    const plans = await SavingsPlan.find({ csoId: id })
+      .sort({ createdAt: -1 })
+      .lean();
     const planIds = plans.map((plan) => plan._id);
 
     const [summaryByCustomer, entries] = await Promise.all([
@@ -84,5 +92,54 @@ exports.getCsoDetail = async (req, res) => {
     return res
       .status(500)
       .json({ message: error.message || "Unable to fetch CSO detail" });
+  }
+};
+
+exports.transferCustomers = async (req, res) => {
+  try {
+    const { targetCsoId, customerIds } = req.body;
+
+    if (!targetCsoId || !Array.isArray(customerIds) || !customerIds.length) {
+      return res
+        .status(400)
+        .json({ message: "Target CSO and customers are required" });
+    }
+
+    const targetCso = await CSO.findById(targetCsoId);
+    if (!targetCso) {
+      return res.status(404).json({ message: "Target CSO not found" });
+    }
+
+    // Prepare updates
+    const customerUpdate = {
+      csoId: targetCso._id,
+      branchId: targetCso.branchId,
+      branchName: targetCso.branchName,
+    };
+
+    const planUpdate = {
+      csoId: targetCso._id,
+      branchId: targetCso.branchId,
+    };
+
+    // Execute updates in parallel
+    await Promise.all([
+      Customer.updateMany(
+        { _id: { $in: customerIds } },
+        { $set: customerUpdate },
+      ),
+      SavingsPlan.updateMany(
+        { customerId: { $in: customerIds } },
+        { $set: planUpdate },
+      ),
+    ]);
+
+    return res.json({
+      message: `Successfully transferred ${customerIds.length} customer(s)`,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message || "Transfer failed" });
   }
 };
